@@ -1,7 +1,7 @@
 {
   "name": "response",
   "version": "1.0.0",
-  "description": "Hostaway responserate app",
+  "description": "Hostaway response-rate app",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
