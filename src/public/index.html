@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hostaway Neon Sync</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+        color: #1f2937;
+      }
+      h1 { margin-bottom: 0.5rem; }
+      .panel {
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+      }
+      input {
+        width: min(420px, 100%);
+        padding: 0.5rem;
+        margin-right: 0.5rem;
+      }
+      button {
+        padding: 0.5rem 0.75rem;
+        cursor: pointer;
+        margin: 0.25rem 0.25rem 0.25rem 0;
+      }
+      pre {
+        min-height: 220px;
+        background: #111827;
+        color: #e5e7eb;
+        padding: 1rem;
+        border-radius: 8px;
+        overflow: auto;
+      }
+      .downloads a {
+        display: inline-block;
+        margin-right: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>hostaway-neon-sync</h1>
+    <p>Manual local sync tool for Hostaway into Neon Postgres.</p>
+
+    <section class="panel">
+      <h2>Sync by Property Name</h2>
+      <input id="propertyName" placeholder="e.g. Ocean Villa" />
+      <button onclick="syncProperty()">Sync Property</button>
+    </section>
+
+    <section class="panel">
+      <h2>Sync by Reservation ID</h2>
+      <input id="reservationId" placeholder="e.g. 123456" />
+      <button onclick="syncReservation()">Sync Reservation</button>
+    </section>
+
+    <section class="panel">
+      <h2>Sync by Conversation ID</h2>
+      <input id="conversationId" placeholder="e.g. 78910" />
+      <button onclick="syncConversation()">Sync Conversation</button>
+    </section>
+
+    <section class="panel downloads">
+      <h2>CSV Downloads</h2>
+      <a href="/export/properties.csv"><button>properties.csv</button></a>
+      <a href="/export/reservations.csv"><button>reservations.csv</button></a>
+      <a href="/export/conversations.csv"><button>conversations.csv</button></a>
+      <a href="/export/messages.csv"><button>messages.csv</button></a>
+    </section>
+
+    <section class="panel">
+      <h2>Output</h2>
+      <pre id="output">Ready.</pre>
+    </section>
+
+    <script>
+      const outputEl = document.getElementById("output");
+
+      function setOutput(value) {
+        outputEl.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+      }
+
+      async function callApi(url, options = {}) {
+        setOutput(`Calling ${url} ...`);
+        try {
+          const response = await fetch(url, {
+            headers: { "Content-Type": "application/json" },
+            ...options,
+          });
+          const text = await response.text();
+          let json;
+          try {
+            json = JSON.parse(text);
+          } catch {
+            json = text;
+          }
+          if (!response.ok) {
+            setOutput({ status: response.status, error: json });
+            return;
+          }
+          setOutput(json);
+        } catch (error) {
+          setOutput({ error: error.message || "Unknown error" });
+        }
+      }
+
+      async function syncProperty() {
+        const propertyName = document.getElementById("propertyName").value.trim();
+        if (!propertyName) {
+          setOutput("Property name is required.");
+          return;
+        }
+        await callApi("/sync/property", {
+          method: "POST",
+          body: JSON.stringify({ propertyName }),
+        });
+      }
+
+      async function syncReservation() {
+        const reservationId = document.getElementById("reservationId").value.trim();
+        if (!reservationId) {
+          setOutput("Reservation ID is required.");
+          return;
+        }
+        await callApi(`/sync/reservation/${encodeURIComponent(reservationId)}`, {
+          method: "POST",
+        });
+      }
+
+      async function syncConversation() {
+        const conversationId = document.getElementById("conversationId").value.trim();
+        if (!conversationId) {
+          setOutput("Conversation ID is required.");
+          return;
+        }
+        await callApi(`/sync/conversation/${encodeURIComponent(conversationId)}`, {
+          method: "POST",
+        });
+      }
+    </script>
+  </body>
+</html>

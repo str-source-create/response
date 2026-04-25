@@ -1,48 +1,112 @@
-# response
+# hostaway-neon-sync
 
-Hostaway response-rate app.
+Production-ready local Node.js + TypeScript tool that syncs Hostaway data into Neon Postgres and exports CSV files.
 
-## What it does
+## Features
 
-- Pulls conversations and messages from Hostaway PMS
-- Calculates response rate by guest
-- Exposes live HTTP endpoints:
-  - `GET /health`
-  - `GET /api/guest-response-rates`
+- Manual sync by:
+  - Property name (listing-first)
+  - Reservation ID
+  - Conversation ID
+- Upsert latest values only (no snapshot history)
+- Raw Hostaway payload stored as JSON for compatibility fallback
+- CSV export endpoints for properties, reservations, conversations, and messages
+- Single-page local UI (no login/auth)
+- Bearer token flow (`/v1/accessTokens`) with DB token cache and retry on auth failure
 
-## Configuration
+## Stack
 
-Set environment variables:
+- Node.js 20+
+- TypeScript
+- Express
+- `pg` (PostgreSQL)
+- `dotenv` + `zod` env validation
+- `csv-stringify/sync`
+- `tsx`
 
-- `HOSTAWAY_BASE_URL` (default: `https://api.hostaway.com`)
-- `HOSTAWAY_API_TOKEN` (required for authenticated Hostaway APIs)
-- `HOSTAWAY_CONVERSATIONS_PATH` (default: `/v1/conversations`)
-- `HOSTAWAY_MESSAGES_PATH` (default: `/v1/messages`)
-- `PORT` (default: `3000`)
+## API Routes
 
-## Run locally
+- `GET /health`
+- `POST /sync/property` body: `{ "propertyName": "..." }`
+- `POST /sync/reservation/:reservationId`
+- `POST /sync/conversation/:conversationId`
+- `GET /export/properties.csv`
+- `GET /export/reservations.csv`
+- `GET /export/conversations.csv`
+- `GET /export/messages.csv`
+- `GET /` (local UI)
 
-```bash
-npm install
-npm start
-```
+## Database tables
 
-## Test
+Migration creates:
 
-```bash
-npm test
-```
+- `hostaway_tokens`
+- `properties`
+- `reservations`
+- `conversations`
+- `conversation_messages`
 
-## Deploy on a VPS
+With primary keys, unique constraints, and lookup indexes for common sync/export queries.
 
-1. Install Node.js 18+ on the VPS.
-2. Copy the project to the VPS.
-3. Set the environment variables above.
-4. Run:
+## Setup (manual)
 
-```bash
-npm install --omit=dev
-npm start
-```
+1. Install Node.js 20+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create env file:
+   ```bash
+   cp .env.example .env
+   ```
+4. Fill `.env` with Neon + Hostaway credentials
+5. Run migration:
+   ```bash
+   npm run db:migrate
+   ```
+6. Start dev server:
+   ```bash
+   npm run dev
+   ```
+7. Open `http://localhost:3000`
 
-For production, run behind a process manager (e.g., systemd/pm2) and reverse proxy (e.g., Nginx).
+## One-click installer files
+
+- `install-and-run.sh` (macOS/Linux)
+- `install-and-run.bat` (Windows)
+
+They do the following:
+
+1. Check Node/npm is installed
+2. Run `npm install`
+3. If `.env` does not exist, copy `.env.example` to `.env` and print: `Please fill .env then rerun`
+4. Run `npm run db:migrate`
+5. Run `npm run dev`
+6. Print app URL: `http://localhost:3000`
+
+## Scripts
+
+- `npm run dev` - run local TS server via tsx
+- `npm run build` - compile TS to `dist/`
+- `npm run start` - run compiled server
+- `npm run check` - TypeScript type-check
+- `npm run db:migrate` - run DB migration
+
+## Exact run instructions for non-technical users
+
+### Windows
+
+1. Open this folder in File Explorer.
+2. Double-click `install-and-run.bat`.
+3. If prompted with `Please fill .env then rerun`, open `.env`, fill values, save, then double-click `install-and-run.bat` again.
+4. Use the app at: `http://localhost:3000`
+
+### macOS / Linux
+
+1. Open Terminal in this folder.
+2. Run:
+   ```bash
+   bash install-and-run.sh
+   ```
+3. If prompted with `Please fill .env then rerun`, open `.env`, fill values, save, and run the script again.
+4. Use the app at: `http://localhost:3000`
