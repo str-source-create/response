@@ -1,0 +1,27 @@
+{
+  "name": "hostaway-neon-sync",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "build": "tsc -p tsconfig.json && mkdir -p dist/public && cp -r src/public/* dist/public/",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "csv-stringify": "^6.5.2",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "pg": "^8.16.3",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.23",
+    "@types/node": "^22.15.21",
+    "@types/pg": "^8.20.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.8.3"
+  }
+}
